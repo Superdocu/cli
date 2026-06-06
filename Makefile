@@ -5,10 +5,10 @@ LDFLAGS  := -X main.version=$(VERSION)
 .PHONY: build install gen test vet fmt clean
 
 build:
-	go build -ldflags "$(LDFLAGS)" -o bin/superdocu .
+	go build -ldflags "$(LDFLAGS)" -o bin/superdocu ./cmd/superdocu
 
 install:
-	go install -ldflags "$(LDFLAGS)" .
+	go install -ldflags "$(LDFLAGS)" ./cmd/superdocu
 
 # Refresh the embedded OpenAPI spec from the published source, keeping the CLI
 # in sync with the API. Rebuild afterwards.

@@ -20,12 +20,37 @@ Both URLs are also printed by `superdocu --help`.
 
 ## Install
 
+**Homebrew (macOS):**
+
 ```sh
-make build      # -> bin/superdocu
-make install    # -> $GOBIN/superdocu
+brew install Superdocu/tap/superdocu
 ```
 
-Or grab a binary from the GitHub releases (built via GoReleaser).
+**Install script (macOS / Linux):**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Superdocu/cli/main/install.sh | sh
+```
+
+**Go:**
+
+```sh
+go install github.com/Superdocu/cli/cmd/superdocu@latest
+```
+
+**Prebuilt binaries:** download the archive for your OS/arch from the
+[releases page](https://github.com/Superdocu/cli/releases), extract, and put
+`superdocu` on your `PATH`.
+
+**From source:**
+
+```sh
+make build      # -> bin/superdocu
+make install    # -> $(go env GOPATH)/bin/superdocu
+```
+
+Releases (binaries, checksums, the Homebrew cask) are produced by GoReleaser
+from a pushed tag — see [docs/updating.md](docs/updating.md).
 
 ## Authenticate
 

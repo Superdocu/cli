@@ -1,20 +1,17 @@
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
 
+	superdocu "github.com/Superdocu/cli"
 	"github.com/Superdocu/cli/internal/cli"
 )
-
-//go:embed openapi/api.yaml
-var specData []byte
 
 var version = "dev"
 
 func main() {
-	if err := cli.Execute(specData, version); err != nil {
+	if err := cli.Execute(superdocu.SpecData, version); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}

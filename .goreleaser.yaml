@@ -8,7 +8,7 @@ before:
 
 builds:
   - id: superdocu
-    main: .
+    main: ./cmd/superdocu
     binary: superdocu
     env:
       - CGO_ENABLED=0
@@ -44,3 +44,26 @@ release:
   github:
     owner: Superdocu
     name: cli
+
+# Homebrew cask published to a separate tap repo so macOS users can:
+#   brew install Superdocu/tap/superdocu
+# Casks are macOS-only; Linux users use install.sh or `go install`.
+# Prerequisites (one-time): create the Superdocu/homebrew-tap repo and add a
+# TAP_GITHUB_TOKEN secret (a PAT with `repo` scope) to this repo.
+homebrew_casks:
+  - name: superdocu
+    repository:
+      owner: Superdocu
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    homepage: "https://developers.superdocu.com/api-v2/tutorial"
+    description: "Superdocu API v2 command-line client"
+    # Strip the quarantine flag so the unsigned binary runs without a Gatekeeper
+    # prompt (we do not Apple-notarize).
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/superdocu"]
+          end

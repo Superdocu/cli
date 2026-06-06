@@ -54,25 +54,43 @@ git add openapi/api.yaml && git commit -m "Refresh embedded API v2 spec"
 
 ## Cut a release
 
-Releases are built by [GoReleaser](https://goreleaser.com) from a tag
-(`.goreleaser.yaml` builds linux/darwin/windows × amd64/arm64).
+Releases are **automated**: pushing a `v*` tag triggers
+`.github/workflows/release.yml`, which runs [GoReleaser](https://goreleaser.com)
+to build the binaries (linux/darwin/windows × amd64/arm64), checksums and the
+Homebrew cask, then publishes the GitHub Release and the cask.
 
 ```sh
-# 1. make sure main is green and the spec is current
-go test ./... && make build
-
-# 2. tag with semver
+go test ./...                      # main should be green (CI runs this too)
 git tag -a v0.3.0 -m "v0.3.0"
-git push origin v0.3.0
-
-# 3. build + publish the GitHub release (needs GITHUB_TOKEN with repo scope)
-goreleaser release --clean
+git push origin v0.3.0             # -> Actions builds & publishes the release
 ```
 
-Dry-run the build without publishing:
+That's it — no local GoReleaser needed.
+
+### One-time prerequisites for the Homebrew cask
+
+The cask is published to a **separate tap repo**, which the default Actions
+`GITHUB_TOKEN` cannot write to. Before the first release:
+
+1. Create the repo `Superdocu/homebrew-tap` (can be empty).
+2. Create a Personal Access Token with `repo` scope on that repo.
+3. Add it to this repo as the `TAP_GITHUB_TOKEN` Actions secret
+   (Settings → Secrets and variables → Actions).
+
+Without it, the release still publishes binaries; only the cask step fails. Once
+set, users can `brew install Superdocu/tap/superdocu`. The binaries are not
+Apple-notarized, so the cask strips the macOS quarantine flag on install.
+
+### Validate or release locally (fallback)
 
 ```sh
-goreleaser release --snapshot --clean   # artifacts land in ./dist, no upload
+brew install goreleaser
+goreleaser check                          # validate .goreleaser.yaml
+goreleaser release --snapshot --clean     # build everything into ./dist, no upload
+goreleaser release --clean                # real release; needs GITHUB_TOKEN (+ TAP_GITHUB_TOKEN)
 ```
 
-Install GoReleaser if needed: `brew install goreleaser`.
+## Continuous integration
+
+`.github/workflows/ci.yml` runs `go vet`, `go test` and `go build` on every push
+to `main` and on pull requests.
