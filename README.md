@@ -7,6 +7,17 @@ spec** (`openapi/api.yaml`). Every endpoint is exposed automatically, so
 refreshing the spec (`make gen`) keeps the CLI in sync with the API — no
 per-endpoint code to maintain.
 
+## API guide
+
+The end-to-end guide — authentication, the dashboard polling loop, the
+validation workflow, file access and error handling — lives here:
+
+- **Humans:** <https://developers.superdocu.com/api-v2/tutorial>
+- **Agents / LLMs (raw markdown):** <https://developers.superdocu.com/api-v2/tutorial.md>
+
+The markdown variant is the one to feed to an AI assistant driving this CLI.
+Both URLs are also printed by `superdocu --help`.
+
 ## Install
 
 ```sh
@@ -74,3 +85,8 @@ superdocu dashboard get
 make gen        # re-download openapi/api.yaml from developers.superdocu.com
 make build      # rebuild; new/changed endpoints appear automatically
 ```
+
+## Updating & releasing
+
+See [docs/updating.md](docs/updating.md) for how to rebuild after pulling a new
+version, refresh the embedded API spec, and cut a tagged release.

@@ -36,9 +36,14 @@ func Execute(specData []byte, version string) error {
 	apiSpec = s
 
 	root := &cobra.Command{
-		Use:           "superdocu",
-		Short:         "Superdocu API v2 command-line client",
-		Long:          fmt.Sprintf("%s — commands are generated from the embedded OpenAPI spec (v%s).", s.Title, s.Version),
+		Use:   "superdocu",
+		Short: "Superdocu API v2 command-line client",
+		Long: fmt.Sprintf(`%s — commands are generated from the embedded OpenAPI spec (v%s).
+
+API guide (auth, dashboard loop, validation workflow, errors):
+  https://developers.superdocu.com/api-v2/tutorial
+Agent/LLM-friendly markdown:
+  https://developers.superdocu.com/api-v2/tutorial.md`, s.Title, s.Version),
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
