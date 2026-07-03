@@ -8,6 +8,10 @@ info:
 
     For the end-to-end walkthrough (auth, dashboard loop, decision examples, error handling, file access), read [tutorial](https://developers.superdocu.com/api-v2/tutorial) — it is published next to this spec.
 
+    ### CLI
+
+    An official command-line client mirrors this API one-to-one: [`Superdocu/cli`](https://github.com/Superdocu/cli). Its commands are generated from this spec, so every endpoint is available as a command. Install with `brew install Superdocu/tap/superdocu` (or `go install github.com/Superdocu/cli/cmd/superdocu@latest`), then run `superdocu login` and, e.g., `superdocu contacts list`.
+
     ### Wording
 
     The API uses the word **contact** everywhere for the end-customer (the person who uploads documents). **Consumer** is the business admin acting on the API. **Workflow** is a collection process; each workflow groups **step_requests** which are either a form input or a **documents_group** (a bucket of files for one logical document type). A **shared_document** is a file the consumer pushes to the contact, not a request.
@@ -42,7 +46,7 @@ info:
 
     ### Action discovery
 
-    Resources expose `available_actions` (what you can do now, with `href` and `required_attributes`) and `unavailable_actions` (what's blocked, with a stable `reason`). These advertisements are authoritative: whatever an `available_action` exposes is exactly what the API will accept right now, and any `unavailable_actions[].reason` matches the error `code` you would receive if you forced the call.
+    Resources expose `available_actions` (what you can do now, with `href`, `required_attributes` and sometimes `required_any_attributes`) and `unavailable_actions` (what's blocked, with a stable `reason`). These advertisements are authoritative: whatever an `available_action` exposes is exactly what the API will accept right now, and any `unavailable_actions[].reason` matches the error `code` you would receive if you forced the call.
 
     ### Rate limiting
 
@@ -52,6 +56,60 @@ info:
 
     Files are never directly accessible. `GET /api/v2/<resource>/:id/url` returns a short-lived URL (`expires_at` 5 minutes ahead) containing a `token` query param. Stream the binary via that URL (Bearer auth still required). For ZIP exports, see `/api/v2/contacts/:id/download` and the polling flow on `/api/v2/downloads/:id`.
 paths:
+  "/api/v2/company_document_types":
+    get:
+      summary: List the document catalogue
+      tags:
+      - "[v2] Catalogue"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: string
+          nullable: true
+          example: eyJ1cGRhdGVkX2F0IjoiMjAyNi0wNS0yMFQxODoyMzoxNyIsImlkIjoyN30
+        description: Forward pagination cursor (opaque base64url). Comes from `meta.next_cursor`
+          of a previous page. Mutually exclusive with `before`.
+      responses:
+        '200':
+          description: lists the company document types
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: lists the company document types
+                  value:
+                    data:
+                    - id: '113'
+                      type: company_document_type
+                      attributes:
+                        name: Name
+                        description:
+                        required: true
+                        kind: simple
+                        expirable: false
+                        provider_kind_name: Transporteurs
+                      relationships:
+                        provider_kind:
+                          data:
+                            id: '15'
+                            type: provider_kind
+                    included:
+                    - id: '15'
+                      type: provider_kind
+                      attributes:
+                        name: Transporteurs
+                        kind: provider_kind
+                    meta:
+                      has_more: false
+                      next_cursor:
+                      prev_cursor:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/CompanyDocumentTypeCollection"
   "/api/v2/contacts/tags":
     get:
       summary: List contact tags
@@ -69,12 +127,12 @@ paths:
                   summary: tags list
                   value:
                     data:
-                    - id: '21'
+                    - id: '28'
                       type: contact_tag
                       attributes:
                         name: Urgent
                         created_at: '2026-05-20T08:00:00.000000Z'
-                    - id: '20'
+                    - id: '27'
                       type: contact_tag
                       attributes:
                         name: VIP
@@ -119,7 +177,7 @@ paths:
                   summary: tag created
                   value:
                     data:
-                      id: '26'
+                      id: '33'
                       type: contact_tag
                       attributes:
                         name: Prioritaire
@@ -246,7 +304,7 @@ paths:
                   summary: paginated contact workflows
                   value:
                     data:
-                    - id: '63'
+                    - id: '128'
                       type: contact_workflow
                       attributes:
                         name: Onboarding
@@ -254,7 +312,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         archived_at:
-                        workflow_id: 91
+                        workflow_id: 384
                         status: complete
                         progress_percentage: 0
                         completed_states_count: 1
@@ -262,24 +320,24 @@ paths:
                         available_actions:
                         - name: create
                           method: POST
-                          href: "/api/v2/contacts/98/workflows"
+                          href: "/api/v2/contacts/182/workflows"
                           required_attributes:
                           - workflow_id
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/98/workflows/63"
+                          href: "/api/v2/contacts/182/workflows/128"
                           required_attributes: []
                         - name: archive
                           method: POST
-                          href: "/api/v2/contacts/98/workflows/63/archive"
+                          href: "/api/v2/contacts/182/workflows/128/archive"
                           required_attributes: []
                         - name: download
                           method: POST
-                          href: "/api/v2/contacts/98/workflows/63/download"
+                          href: "/api/v2/contacts/182/workflows/128/download"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/98/workflows/63"
+                          href: "/api/v2/contacts/182/workflows/128"
                           required_attributes: []
                         unavailable_actions:
                         - name: unarchive
@@ -287,17 +345,17 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '98'
+                            id: '182'
                             type: contact
                         step_requests:
                           data: []
                         contact_workflow_states:
                           data:
-                          - id: '96'
+                          - id: '270'
                             type: contact_workflow_state
                         current_contact_workflow_state:
                           data:
-                            id: '96'
+                            id: '270'
                             type: contact_workflow_state
                     meta:
                       has_more: false
@@ -344,7 +402,7 @@ paths:
                     (v2 default)
                   value:
                     data:
-                      id: '68'
+                      id: '133'
                       type: contact_workflow
                       attributes:
                         name: Onboarding
@@ -352,7 +410,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         archived_at:
-                        workflow_id: 100
+                        workflow_id: 393
                         status: complete
                         progress_percentage: 0
                         completed_states_count: 1
@@ -360,24 +418,24 @@ paths:
                         available_actions:
                         - name: create
                           method: POST
-                          href: "/api/v2/contacts/103/workflows"
+                          href: "/api/v2/contacts/187/workflows"
                           required_attributes:
                           - workflow_id
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/103/workflows/68"
+                          href: "/api/v2/contacts/187/workflows/133"
                           required_attributes: []
                         - name: archive
                           method: POST
-                          href: "/api/v2/contacts/103/workflows/68/archive"
+                          href: "/api/v2/contacts/187/workflows/133/archive"
                           required_attributes: []
                         - name: download
                           method: POST
-                          href: "/api/v2/contacts/103/workflows/68/download"
+                          href: "/api/v2/contacts/187/workflows/133/download"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/103/workflows/68"
+                          href: "/api/v2/contacts/187/workflows/133"
                           required_attributes: []
                         unavailable_actions:
                         - name: unarchive
@@ -385,17 +443,17 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '103'
+                            id: '187'
                             type: contact
                         step_requests:
                           data: []
                         contact_workflow_states:
                           data:
-                          - id: '101'
+                          - id: '275'
                             type: contact_workflow_state
                         current_contact_workflow_state:
                           data:
-                            id: '101'
+                            id: '275'
                             type: contact_workflow_state
                     meta:
                       api_version: '2.0'
@@ -470,7 +528,7 @@ paths:
                   summary: contact workflow with full graph
                   value:
                     data:
-                      id: '78'
+                      id: '143'
                       type: contact_workflow
                       attributes:
                         name: Onboarding
@@ -478,7 +536,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         archived_at:
-                        workflow_id: 116
+                        workflow_id: 409
                         status: complete
                         progress_percentage: 0
                         completed_states_count: 1
@@ -486,24 +544,24 @@ paths:
                         available_actions:
                         - name: create
                           method: POST
-                          href: "/api/v2/contacts/109/workflows"
+                          href: "/api/v2/contacts/193/workflows"
                           required_attributes:
                           - workflow_id
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/109/workflows/78"
+                          href: "/api/v2/contacts/193/workflows/143"
                           required_attributes: []
                         - name: archive
                           method: POST
-                          href: "/api/v2/contacts/109/workflows/78/archive"
+                          href: "/api/v2/contacts/193/workflows/143/archive"
                           required_attributes: []
                         - name: download
                           method: POST
-                          href: "/api/v2/contacts/109/workflows/78/download"
+                          href: "/api/v2/contacts/193/workflows/143/download"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/109/workflows/78"
+                          href: "/api/v2/contacts/193/workflows/143"
                           required_attributes: []
                         unavailable_actions:
                         - name: unarchive
@@ -511,27 +569,27 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '109'
+                            id: '193'
                             type: contact
                         step_requests:
                           data: []
                         contact_workflow_states:
                           data:
-                          - id: '112'
+                          - id: '286'
                             type: contact_workflow_state
                         current_contact_workflow_state:
                           data:
-                            id: '112'
+                            id: '286'
                             type: contact_workflow_state
                     meta:
                       api_version: '2.0'
                     included:
-                    - id: '112'
+                    - id: '286'
                       type: contact_workflow_state
                       attributes:
                         name: Step 1
                         inputs:
-                        - id: 200
+                        - id: 742
                           name: 'Screen #27'
                           type: screen
                           position: 1
@@ -576,7 +634,7 @@ paths:
                   summary: contact workflow updated
                   value:
                     data:
-                      id: '87'
+                      id: '152'
                       type: contact_workflow
                       attributes:
                         name: Renamed
@@ -584,7 +642,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         archived_at:
-                        workflow_id: 132
+                        workflow_id: 425
                         status: complete
                         progress_percentage: 0
                         completed_states_count: 1
@@ -592,24 +650,24 @@ paths:
                         available_actions:
                         - name: create
                           method: POST
-                          href: "/api/v2/contacts/118/workflows"
+                          href: "/api/v2/contacts/202/workflows"
                           required_attributes:
                           - workflow_id
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/118/workflows/87"
+                          href: "/api/v2/contacts/202/workflows/152"
                           required_attributes: []
                         - name: archive
                           method: POST
-                          href: "/api/v2/contacts/118/workflows/87/archive"
+                          href: "/api/v2/contacts/202/workflows/152/archive"
                           required_attributes: []
                         - name: download
                           method: POST
-                          href: "/api/v2/contacts/118/workflows/87/download"
+                          href: "/api/v2/contacts/202/workflows/152/download"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/118/workflows/87"
+                          href: "/api/v2/contacts/202/workflows/152"
                           required_attributes: []
                         unavailable_actions:
                         - name: unarchive
@@ -617,17 +675,17 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '118'
+                            id: '202'
                             type: contact
                         step_requests:
                           data: []
                         contact_workflow_states:
                           data:
-                          - id: '124'
+                          - id: '298'
                             type: contact_workflow_state
                         current_contact_workflow_state:
                           data:
-                            id: '124'
+                            id: '298'
                             type: contact_workflow_state
                     meta:
                       api_version: '2.0'
@@ -725,7 +783,7 @@ paths:
                   summary: contact workflow archived
                   value:
                     data:
-                      id: '91'
+                      id: '156'
                       type: contact_workflow
                       attributes:
                         name: Onboarding
@@ -733,7 +791,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         archived_at: '2026-05-20T08:00:00.000000Z'
-                        workflow_id: 140
+                        workflow_id: 433
                         status: complete
                         progress_percentage: 0
                         completed_states_count: 1
@@ -741,24 +799,24 @@ paths:
                         available_actions:
                         - name: create
                           method: POST
-                          href: "/api/v2/contacts/122/workflows"
+                          href: "/api/v2/contacts/206/workflows"
                           required_attributes:
                           - workflow_id
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/122/workflows/91"
+                          href: "/api/v2/contacts/206/workflows/156"
                           required_attributes: []
                         - name: unarchive
                           method: POST
-                          href: "/api/v2/contacts/122/workflows/91/unarchive"
+                          href: "/api/v2/contacts/206/workflows/156/unarchive"
                           required_attributes: []
                         - name: download
                           method: POST
-                          href: "/api/v2/contacts/122/workflows/91/download"
+                          href: "/api/v2/contacts/206/workflows/156/download"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/122/workflows/91"
+                          href: "/api/v2/contacts/206/workflows/156"
                           required_attributes: []
                         unavailable_actions:
                         - name: archive
@@ -766,17 +824,17 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '122'
+                            id: '206'
                             type: contact
                         step_requests:
                           data: []
                         contact_workflow_states:
                           data:
-                          - id: '128'
+                          - id: '302'
                             type: contact_workflow_state
                         current_contact_workflow_state:
                           data:
-                            id: '128'
+                            id: '302'
                             type: contact_workflow_state
                     meta:
                       api_version: '2.0'
@@ -831,7 +889,7 @@ paths:
                   summary: contact workflow unarchived
                   value:
                     data:
-                      id: '93'
+                      id: '158'
                       type: contact_workflow
                       attributes:
                         name: Onboarding
@@ -839,7 +897,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         archived_at:
-                        workflow_id: 144
+                        workflow_id: 437
                         status: complete
                         progress_percentage: 0
                         completed_states_count: 1
@@ -847,24 +905,24 @@ paths:
                         available_actions:
                         - name: create
                           method: POST
-                          href: "/api/v2/contacts/124/workflows"
+                          href: "/api/v2/contacts/208/workflows"
                           required_attributes:
                           - workflow_id
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/124/workflows/93"
+                          href: "/api/v2/contacts/208/workflows/158"
                           required_attributes: []
                         - name: archive
                           method: POST
-                          href: "/api/v2/contacts/124/workflows/93/archive"
+                          href: "/api/v2/contacts/208/workflows/158/archive"
                           required_attributes: []
                         - name: download
                           method: POST
-                          href: "/api/v2/contacts/124/workflows/93/download"
+                          href: "/api/v2/contacts/208/workflows/158/download"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/124/workflows/93"
+                          href: "/api/v2/contacts/208/workflows/158"
                           required_attributes: []
                         unavailable_actions:
                         - name: unarchive
@@ -872,17 +930,17 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '124'
+                            id: '208'
                             type: contact
                         step_requests:
                           data: []
                         contact_workflow_states:
                           data:
-                          - id: '130'
+                          - id: '304'
                             type: contact_workflow_state
                         current_contact_workflow_state:
                           data:
-                            id: '130'
+                            id: '304'
                             type: contact_workflow_state
                     meta:
                       api_version: '2.0'
@@ -936,14 +994,14 @@ paths:
                   summary: download scheduled (poll via /downloads/:id)
                   value:
                     data:
-                      id: yRzN37cMKwyjwojqoeCSNA
+                      id: nG63f2DWGhoUKRKSKxOyag
                       type: download
                       attributes:
                         status: processing
                         url:
                         expires_at:
                         error:
-                        poll_url: https://api.superdocu.local/api/v2/downloads/yRzN37cMKwyjwojqoeCSNA
+                        poll_url: https://api.superdocu.local/api/v2/downloads/nG63f2DWGhoUKRKSKxOyag
                     meta:
                       api_version: '2.0'
               schema:
@@ -1031,7 +1089,7 @@ paths:
                   summary: paginated contacts
                   value:
                     data:
-                    - id: '128'
+                    - id: '212'
                       type: contact
                       attributes:
                         first_name: Marie
@@ -1040,7 +1098,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user275@umadcorp.com
+                        email: user192@umadcorp.com
                         locale:
                         notes:
                         tracking_params: {}
@@ -1052,15 +1110,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/128"
+                          href: "/api/v2/contacts/212"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/128/disable"
+                          href: "/api/v2/contacts/212/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/128"
+                          href: "/api/v2/contacts/212"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1074,7 +1132,7 @@ paths:
                       relationships:
                         tags:
                           data: []
-                    - id: '127'
+                    - id: '211'
                       type: contact
                       attributes:
                         first_name: Jean
@@ -1083,7 +1141,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user274@umadcorp.com
+                        email: user191@umadcorp.com
                         locale:
                         notes:
                         tracking_params: {}
@@ -1095,15 +1153,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/127"
+                          href: "/api/v2/contacts/211"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/127/disable"
+                          href: "/api/v2/contacts/211/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/127"
+                          href: "/api/v2/contacts/211"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1164,7 +1222,7 @@ paths:
                   summary: contact created
                   value:
                     data:
-                      id: '159'
+                      id: '243'
                       type: contact
                       attributes:
                         first_name: Alice
@@ -1185,15 +1243,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/159"
+                          href: "/api/v2/contacts/243"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/159/disable"
+                          href: "/api/v2/contacts/243/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/159"
+                          href: "/api/v2/contacts/243"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1322,7 +1380,7 @@ paths:
                   summary: contact found
                   value:
                     data:
-                      id: '164'
+                      id: '248'
                       type: contact
                       attributes:
                         first_name: Jean
@@ -1331,7 +1389,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user346@umadcorp.com
+                        email: user259@umadcorp.com
                         locale:
                         notes:
                         tracking_params: {}
@@ -1343,15 +1401,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/164"
+                          href: "/api/v2/contacts/248"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/164/disable"
+                          href: "/api/v2/contacts/248/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/164"
+                          href: "/api/v2/contacts/248"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1406,7 +1464,7 @@ paths:
                   summary: contact updated
                   value:
                     data:
-                      id: '171'
+                      id: '255'
                       type: contact
                       attributes:
                         first_name: Jean-Updated
@@ -1415,7 +1473,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user369@umadcorp.com
+                        email: user276@umadcorp.com
                         locale:
                         notes: VIP
                         tracking_params: {}
@@ -1427,15 +1485,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/171"
+                          href: "/api/v2/contacts/255"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/171/disable"
+                          href: "/api/v2/contacts/255/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/171"
+                          href: "/api/v2/contacts/255"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1588,7 +1646,7 @@ paths:
                   summary: invitation sent
                   value:
                     data:
-                      id: '183'
+                      id: '267'
                       type: contact
                       attributes:
                         first_name: Jean
@@ -1597,7 +1655,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user395@umadcorp.com
+                        email: user302@umadcorp.com
                         locale:
                         notes:
                         tracking_params: {}
@@ -1609,23 +1667,23 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/183"
+                          href: "/api/v2/contacts/267"
                           required_attributes: []
                         - name: invite
                           method: POST
-                          href: "/api/v2/contacts/183/invite"
+                          href: "/api/v2/contacts/267/invite"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/183/disable"
+                          href: "/api/v2/contacts/267/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/183"
+                          href: "/api/v2/contacts/267"
                           required_attributes: []
                         - name: remind
                           method: POST
-                          href: "/api/v2/contacts/183/reminders"
+                          href: "/api/v2/contacts/267/reminders"
                           required_attributes:
                           - title
                           - body
@@ -1684,7 +1742,7 @@ paths:
                   summary: contact enabled
                   value:
                     data:
-                      id: '191'
+                      id: '275'
                       type: contact
                       attributes:
                         first_name: Jean
@@ -1693,7 +1751,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user413@umadcorp.com
+                        email: user318@umadcorp.com
                         locale:
                         notes:
                         tracking_params: {}
@@ -1705,15 +1763,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/191"
+                          href: "/api/v2/contacts/275"
                           required_attributes: []
                         - name: disable
                           method: POST
-                          href: "/api/v2/contacts/191/disable"
+                          href: "/api/v2/contacts/275/disable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/191"
+                          href: "/api/v2/contacts/275"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1775,7 +1833,7 @@ paths:
                   summary: contact disabled
                   value:
                     data:
-                      id: '197'
+                      id: '281'
                       type: contact
                       attributes:
                         first_name: Jean
@@ -1784,7 +1842,7 @@ paths:
                         company_name:
                         company_siret:
                         company_siren:
-                        email: user425@umadcorp.com
+                        email: user330@umadcorp.com
                         locale:
                         notes:
                         tracking_params: {}
@@ -1796,15 +1854,15 @@ paths:
                         available_actions:
                         - name: update
                           method: PATCH
-                          href: "/api/v2/contacts/197"
+                          href: "/api/v2/contacts/281"
                           required_attributes: []
                         - name: enable
                           method: POST
-                          href: "/api/v2/contacts/197/enable"
+                          href: "/api/v2/contacts/281/enable"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/contacts/197"
+                          href: "/api/v2/contacts/281"
                           required_attributes: []
                         unavailable_actions:
                         - name: invite
@@ -1876,11 +1934,12 @@ paths:
                   summary: custom documents_group created
                   value:
                     data:
-                      id: '45'
+                      id: '95'
                       type: documents_group
                       attributes:
                         description: Document optionnel
                         expiration_date:
+                        emission_date:
                         requested_message:
                         not_applicable_reason:
                         automatic_status:
@@ -1895,12 +1954,12 @@ paths:
                         available_actions:
                         - name: upload
                           method: POST
-                          href: "/api/v2/documents_groups/45/documents"
+                          href: "/api/v2/documents_groups/95/documents"
                           required_attributes:
                           - files[]
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/45"
+                          href: "/api/v2/documents_groups/95"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -1920,7 +1979,7 @@ paths:
                           data: []
                         contact:
                           data:
-                            id: '201'
+                            id: '285'
                             type: contact
                         step_request:
                           data:
@@ -2012,20 +2071,20 @@ paths:
                       relationships:
                         pending_actions:
                           data:
-                          - id: step_request:49:validate_form_answer
+                          - id: step_request:173:validate_form_answer
                             type: pending_action
                     included:
-                    - id: step_request:49:validate_form_answer
+                    - id: step_request:173:validate_form_answer
                       type: pending_action
                       attributes:
                         action_type: validate_form_answer
                         resource_type: step_request
-                        resource_id: '49'
-                        contact_id: '203'
+                        resource_id: '173'
+                        contact_id: '287'
                         contact_first_name: John
                         contact_last_name: Doe
-                        workflow_id: '106'
-                        state_id: '151'
+                        workflow_id: '171'
+                        state_id: '325'
                         label: IBAN
                         priority_reason: waiting_for_validation
                         updated_at: '2026-05-20T10:00:00.000000+02:00'
@@ -2070,11 +2129,12 @@ paths:
                   summary: documents_group with documents and checks
                   value:
                     data:
-                      id: '48'
+                      id: '98'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date:
+                        emission_date:
                         requested_message:
                         not_applicable_reason:
                         automatic_status:
@@ -2089,16 +2149,16 @@ paths:
                         available_actions:
                         - name: approve
                           method: POST
-                          href: "/api/v2/documents_groups/48/approve"
+                          href: "/api/v2/documents_groups/98/approve"
                           required_attributes: []
                         - name: upload
                           method: POST
-                          href: "/api/v2/documents_groups/48/documents"
+                          href: "/api/v2/documents_groups/98/documents"
                           required_attributes:
                           - files[]
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/48"
+                          href: "/api/v2/documents_groups/98"
                           required_attributes: []
                         unavailable_actions:
                         - name: request
@@ -2114,20 +2174,20 @@ paths:
                       relationships:
                         documents:
                           data:
-                          - id: '28'
+                          - id: '39'
                             type: document
                         contact:
                           data:
-                            id: '227'
+                            id: '311'
                             type: contact
                         step_request:
                           data:
-                            id: '63'
+                            id: '187'
                             type: step_request
                     meta:
                       api_version: '2.0'
                     included:
-                    - id: '28'
+                    - id: '39'
                       type: document
                       attributes:
                         original_filename: dummy.png
@@ -2140,28 +2200,28 @@ paths:
                         available_actions:
                         - name: approve
                           method: POST
-                          href: "/api/v2/documents/28/approve"
+                          href: "/api/v2/documents/39/approve"
                           required_attributes: []
                         - name: reject
                           method: POST
-                          href: "/api/v2/documents/28/reject"
+                          href: "/api/v2/documents/39/reject"
                           required_attributes:
                           - rejection_message
                         - name: url
                           method: GET
-                          href: "/api/v2/documents/28/url"
+                          href: "/api/v2/documents/39/url"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents/28"
+                          href: "/api/v2/documents/39"
                           required_attributes: []
                         unavailable_actions: []
                       relationships:
                         documents_group:
                           data:
-                            id: '48'
+                            id: '98'
                             type: documents_group
-                    - id: '63'
+                    - id: '187'
                       type: step_request
                       attributes:
                         value:
@@ -2169,11 +2229,11 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         status: waiting_for_validation
-                        step_input_id: 298
+                        step_input_id: 840
                         input_type: contact_kind
                         input_name: Name
                         input_kind: simple
-                        documents_group_id: 48
+                        documents_group_id: 98
                         docu_sign_contract_request_id:
                         available_actions: []
                         unavailable_actions:
@@ -2186,7 +2246,7 @@ paths:
                       relationships:
                         documents_group:
                           data:
-                            id: '48'
+                            id: '98'
                             type: documents_group
               schema:
                 "$ref": "#/components/schemas/DocumentsGroup"
@@ -2259,11 +2319,12 @@ paths:
                   summary: documents_group approved
                   value:
                     data:
-                      id: '58'
+                      id: '108'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date:
+                        emission_date:
                         requested_message:
                         not_applicable_reason:
                         automatic_status:
@@ -2278,17 +2339,17 @@ paths:
                         available_actions:
                         - name: request
                           method: POST
-                          href: "/api/v2/documents_groups/58/request"
+                          href: "/api/v2/documents_groups/108/request"
                           required_attributes:
                           - requested_message
                         - name: upload
                           method: POST
-                          href: "/api/v2/documents_groups/58/documents"
+                          href: "/api/v2/documents_groups/108/documents"
                           required_attributes:
                           - files[]
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/58"
+                          href: "/api/v2/documents_groups/108"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -2304,15 +2365,15 @@ paths:
                       relationships:
                         documents:
                           data:
-                          - id: '35'
+                          - id: '46'
                             type: document
                         contact:
                           data:
-                            id: '243'
+                            id: '327'
                             type: contact
                         step_request:
                           data:
-                            id: '71'
+                            id: '195'
                             type: step_request
                     meta:
                       api_version: '2.0'
@@ -2361,11 +2422,12 @@ paths:
                   summary: documents_group requested
                   value:
                     data:
-                      id: '60'
+                      id: '110'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date:
+                        emission_date:
                         requested_message: Page 2 manquante
                         not_applicable_reason:
                         automatic_status:
@@ -2380,16 +2442,16 @@ paths:
                         available_actions:
                         - name: approve
                           method: POST
-                          href: "/api/v2/documents_groups/60/approve"
+                          href: "/api/v2/documents_groups/110/approve"
                           required_attributes: []
                         - name: upload
                           method: POST
-                          href: "/api/v2/documents_groups/60/documents"
+                          href: "/api/v2/documents_groups/110/documents"
                           required_attributes:
                           - files[]
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/60"
+                          href: "/api/v2/documents_groups/110"
                           required_attributes: []
                         unavailable_actions:
                         - name: request
@@ -2405,15 +2467,15 @@ paths:
                       relationships:
                         documents:
                           data:
-                          - id: '37'
+                          - id: '48'
                             type: document
                         contact:
                           data:
-                            id: '247'
+                            id: '331'
                             type: contact
                         step_request:
                           data:
-                            id: '73'
+                            id: '197'
                             type: step_request
                     meta:
                       api_version: '2.0'
@@ -2525,7 +2587,7 @@ paths:
           can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
       responses:
         '200':
-          description: expiration_date updated
+          description: emission_date updated
           content:
             application/json:
               examples:
@@ -2533,11 +2595,12 @@ paths:
                   summary: expiration_date updated
                   value:
                     data:
-                      id: '66'
+                      id: '116'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date: '2027-12-31'
+                        emission_date:
                         requested_message:
                         not_applicable_reason:
                         automatic_status:
@@ -2552,17 +2615,18 @@ paths:
                         available_actions:
                         - name: upload
                           method: POST
-                          href: "/api/v2/documents_groups/66/documents"
+                          href: "/api/v2/documents_groups/116/documents"
                           required_attributes:
                           - files[]
                         - name: update_expiration
                           method: PATCH
-                          href: "/api/v2/documents_groups/66/expiration_date"
-                          required_attributes:
+                          href: "/api/v2/documents_groups/116/expiration_date"
+                          required_attributes: []
+                          required_any_attributes:
                           - expiration_date
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/66"
+                          href: "/api/v2/documents_groups/116"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -2580,16 +2644,84 @@ paths:
                           data: []
                         contact:
                           data:
-                            id: '257'
+                            id: '341'
                             type: contact
                         step_request:
                           data:
-                            id: '79'
+                            id: '203'
+                            type: step_request
+                    meta:
+                      api_version: '2.0'
+                emission_date_updated:
+                  summary: emission_date updated
+                  value:
+                    data:
+                      id: '118'
+                      type: documents_group
+                      attributes:
+                        description:
+                        expiration_date: '2027-12-30'
+                        emission_date: '2027-09-30'
+                        requested_message:
+                        not_applicable_reason:
+                        automatic_status:
+                        automatic_checks: {}
+                        created_at: '2026-05-20T08:00:00.000000Z'
+                        updated_at: '2026-05-20T08:00:00.000000Z'
+                        label: Name
+                        required: true
+                        status: waiting_for_validation
+                        expirable: true
+                        validation_instructions:
+                        available_actions:
+                        - name: upload
+                          method: POST
+                          href: "/api/v2/documents_groups/118/documents"
+                          required_attributes:
+                          - files[]
+                        - name: update_expiration
+                          method: PATCH
+                          href: "/api/v2/documents_groups/118/expiration_date"
+                          required_attributes: []
+                          required_any_attributes:
+                          - expiration_date
+                          - emission_date
+                        - name: delete
+                          method: DELETE
+                          href: "/api/v2/documents_groups/118"
+                          required_attributes: []
+                        unavailable_actions:
+                        - name: approve
+                          reason: not_approveable
+                        - name: request
+                          reason: status_must_be_approved_or_rejected
+                        - name: mark_not_applicable
+                          reason: required_document
+                        - name: approve_not_applicable
+                          reason: status_must_be_not_applicable_pending
+                        - name: refuse_not_applicable
+                          reason: status_must_be_not_applicable_pending
+                      relationships:
+                        documents:
+                          data: []
+                        contact:
+                          data:
+                            id: '344'
+                            type: contact
+                        step_request:
+                          data:
+                            id: '205'
                             type: step_request
                     meta:
                       api_version: '2.0'
               schema:
                 "$ref": "#/components/schemas/DocumentsGroup"
+        '422':
+          description: rejects update when both dates are missing
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/JsonApiError422"
       requestBody:
         content:
           application/json:
@@ -2617,8 +2749,17 @@ paths:
                           example: '2027-12-31'
                           description: New expiration date (ISO 8601 date). Requires
                             an `expirable` documents_group.
-                      required:
-                      - expiration_date
+                        emission_date:
+                          type: string
+                          format: date
+                          example: '2027-09-30'
+                          description: New emission date (ISO 8601 date). The expiration
+                            date is computed from the document type offset.
+                      anyOf:
+                      - required:
+                        - expiration_date
+                      - required:
+                        - emission_date
   "/api/v2/documents_groups/{id}/not_applicable":
     parameters:
     - name: id
@@ -2656,11 +2797,12 @@ paths:
                   summary: documents_group not_applicable
                   value:
                     data:
-                      id: '68'
+                      id: '122'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date:
+                        emission_date:
                         requested_message:
                         not_applicable_reason: Auto-entrepreneur
                         automatic_status:
@@ -2675,7 +2817,7 @@ paths:
                         available_actions:
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/68"
+                          href: "/api/v2/documents_groups/122"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -2697,11 +2839,11 @@ paths:
                           data: []
                         contact:
                           data:
-                            id: '260'
+                            id: '350'
                             type: contact
                         step_request:
                           data:
-                            id: '81'
+                            id: '209'
                             type: step_request
                     meta:
                       api_version: '2.0'
@@ -2778,11 +2920,12 @@ paths:
                   summary: approved when status is not_applicable_pending
                   value:
                     data:
-                      id: '74'
+                      id: '128'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date:
+                        emission_date:
                         requested_message:
                         not_applicable_reason:
                         automatic_status:
@@ -2797,7 +2940,7 @@ paths:
                         available_actions:
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/74"
+                          href: "/api/v2/documents_groups/128"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -2817,15 +2960,15 @@ paths:
                       relationships:
                         documents:
                           data:
-                          - id: '47'
+                          - id: '60'
                             type: document
                         contact:
                           data:
-                            id: '271'
+                            id: '361'
                             type: contact
                         step_request:
                           data:
-                            id: '87'
+                            id: '215'
                             type: step_request
                     meta:
                       api_version: '2.0'
@@ -2874,11 +3017,12 @@ paths:
                   summary: refused when status is not_applicable_pending
                   value:
                     data:
-                      id: '76'
+                      id: '130'
                       type: documents_group
                       attributes:
                         description:
                         expiration_date:
+                        emission_date:
                         requested_message:
                         not_applicable_reason:
                         automatic_status:
@@ -2893,12 +3037,12 @@ paths:
                         available_actions:
                         - name: upload
                           method: POST
-                          href: "/api/v2/documents_groups/76/documents"
+                          href: "/api/v2/documents_groups/130/documents"
                           required_attributes:
                           - files[]
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents_groups/76"
+                          href: "/api/v2/documents_groups/130"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -2916,15 +3060,15 @@ paths:
                       relationships:
                         documents:
                           data:
-                          - id: '49'
+                          - id: '62'
                             type: document
                         contact:
                           data:
-                            id: '275'
+                            id: '365'
                             type: contact
                         step_request:
                           data:
-                            id: '89'
+                            id: '217'
                             type: step_request
                     meta:
                       api_version: '2.0'
@@ -2960,16 +3104,16 @@ paths:
                   summary: url + expires_at
                   value:
                     data:
-                      id: '52'
                       type: document
+                      id: '65'
                       attributes:
                         original_filename: doc.pdf
-                        url: https://api.superdocu.local/api/v2/documents/52/file?token=REDACTED
+                        url: https://api.superdocu.local/api/v2/documents/65/file?token=REDACTED
                         expires_at: '2026-05-20T08:05:00.000000Z'
                       relationships:
                         documents_group:
                           data:
-                            id: '79'
+                            id: '133'
                             type: documents_group
                     meta:
                       api_version: '2.0'
@@ -3028,7 +3172,7 @@ paths:
                     as well)
                   value:
                     data:
-                      id: '57'
+                      id: '70'
                       type: document
                       attributes:
                         original_filename: doc.pdf
@@ -3041,16 +3185,16 @@ paths:
                         available_actions:
                         - name: reject
                           method: POST
-                          href: "/api/v2/documents/57/reject"
+                          href: "/api/v2/documents/70/reject"
                           required_attributes:
                           - rejection_message
                         - name: url
                           method: GET
-                          href: "/api/v2/documents/57/url"
+                          href: "/api/v2/documents/70/url"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents/57"
+                          href: "/api/v2/documents/70"
                           required_attributes: []
                         unavailable_actions:
                         - name: approve
@@ -3058,7 +3202,7 @@ paths:
                       relationships:
                         documents_group:
                           data:
-                            id: '83'
+                            id: '137'
                             type: documents_group
                     meta:
                       api_version: '2.0'
@@ -3110,7 +3254,7 @@ paths:
                     rejected as soon as any one document is rejected)
                   value:
                     data:
-                      id: '59'
+                      id: '72'
                       type: document
                       attributes:
                         original_filename: r.pdf
@@ -3123,15 +3267,15 @@ paths:
                         available_actions:
                         - name: approve
                           method: POST
-                          href: "/api/v2/documents/59/approve"
+                          href: "/api/v2/documents/72/approve"
                           required_attributes: []
                         - name: url
                           method: GET
-                          href: "/api/v2/documents/59/url"
+                          href: "/api/v2/documents/72/url"
                           required_attributes: []
                         - name: delete
                           method: DELETE
-                          href: "/api/v2/documents/59"
+                          href: "/api/v2/documents/72"
                           required_attributes: []
                         unavailable_actions:
                         - name: reject
@@ -3139,7 +3283,7 @@ paths:
                       relationships:
                         documents_group:
                           data:
-                            id: '85'
+                            id: '139'
                             type: documents_group
                     meta:
                       api_version: '2.0'
@@ -3239,14 +3383,14 @@ paths:
                     yet)
                   value:
                     data:
-                      id: Y7SmSVf9pbPEbQd3KvlARQ
+                      id: ADfTOUUEImEnH3KhKi0LZA
                       type: download
                       attributes:
                         status: processing
                         url:
                         expires_at:
                         error:
-                        poll_url: https://api.superdocu.local/api/v2/downloads/Y7SmSVf9pbPEbQd3KvlARQ
+                        poll_url: https://api.superdocu.local/api/v2/downloads/ADfTOUUEImEnH3KhKi0LZA
                     meta:
                       api_version: '2.0'
               schema:
@@ -3331,14 +3475,14 @@ paths:
                   summary: download scheduled (poll via /downloads/:id)
                   value:
                     data:
-                      id: NqKpKiYhkQ_2uebxggIeAw
+                      id: 5NoUIBj4dQ6IjNrTXJbmNw
                       type: download
                       attributes:
                         status: processing
                         url:
                         expires_at:
                         error:
-                        poll_url: https://api.superdocu.local/api/v2/downloads/NqKpKiYhkQ_2uebxggIeAw
+                        poll_url: https://api.superdocu.local/api/v2/downloads/5NoUIBj4dQ6IjNrTXJbmNw
                     meta:
                       api_version: '2.0'
               schema:
@@ -3501,8 +3645,8 @@ paths:
                         created: 2
                         errors: 0
                         contact_ids:
-                        - 336
-                        - 337
+                        - 426
+                        - 427
                         error_details: []
                         warning_message:
                     meta:
@@ -3542,10 +3686,10 @@ paths:
                   summary: current consumer info
                   value:
                     data:
-                      id: '882'
+                      id: '1206'
                       type: me
                       attributes:
-                        email: user965@umadcorp.com
+                        email: user739@umadcorp.com
                         first_name: John
                         last_name: Doe
                         permissions:
@@ -3554,12 +3698,12 @@ paths:
                         - manage_workflows
                         - manage_portals
                         company:
-                          id: 494
+                          id: 800
                           name: UMad Corp
                           slug: umad-corp
                           default_locale:
                         token:
-                          id: 201
+                          id: 385
                           subject: API
                           expires_at: '2029-05-20T08:00:00.000000Z'
                     meta:
@@ -3578,6 +3722,483 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/JsonApiError403"
+  "/api/v2/portals":
+    get:
+      summary: List portals
+      tags:
+      - "[v2] Portals"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: after
+        in: query
+        required: false
+        schema:
+          type: string
+          nullable: true
+          example: eyJ1cGRhdGVkX2F0IjoiMjAyNi0wNS0yMFQxODoyMzoxNyIsImlkIjoyN30
+        description: Forward pagination cursor (opaque base64url). Comes from `meta.next_cursor`
+          of a previous page. Mutually exclusive with `before`.
+      responses:
+        '200':
+          description: lists the company portals
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: lists the company portals
+                  value:
+                    data:
+                    - id: '38'
+                      type: portal
+                      attributes:
+                        name: My Portal
+                        slug: my-portal
+                        live: false
+                        public: false
+                        filter_entry: false
+                        filter_question:
+                        phone_number_required: false
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                        effective_live: false
+                        welcome_message: Welcome to this awesome portal
+                        denied_message: ''
+                        public_url: https://umad-corp.superdocu.local:5001/p/my-portal
+                      relationships:
+                        workflow:
+                          data:
+                            id: '648'
+                            type: workflow
+                    included:
+                    - id: '648'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '688'
+                            type: state
+                        reminder_template:
+                          data:
+                    meta:
+                      has_more: false
+                      next_cursor:
+                      prev_cursor:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/PortalCollection"
+    post:
+      summary: Create a portal
+      tags:
+      - "[v2] Portals"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '201':
+          description: creates an unpublished portal
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: creates an unpublished portal
+                  value:
+                    data:
+                      id: '40'
+                      type: portal
+                      attributes:
+                        name: Onboarding public
+                        slug: onboarding-public
+                        live: false
+                        public: false
+                        filter_entry: false
+                        filter_question:
+                        phone_number_required: false
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                        effective_live: false
+                        welcome_message: ''
+                        denied_message: ''
+                        public_url: https://umad-corp.superdocu.local:5001/p/onboarding-public
+                      relationships:
+                        workflow:
+                          data:
+                            id: '650'
+                            type: workflow
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '650'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '690'
+                            type: state
+                        reminder_template:
+                          data:
+              schema:
+                "$ref": "#/components/schemas/Portal"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - portal
+                    attributes:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        workflow_id:
+                          type: integer
+                      required:
+                      - name
+                      - workflow_id
+  "/api/v2/portals/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: Update a portal
+      tags:
+      - "[v2] Portals"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: updates the provided fields
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: updates the provided fields
+                  value:
+                    data:
+                      id: '41'
+                      type: portal
+                      attributes:
+                        name: Renamed
+                        slug: old
+                        live: false
+                        public: false
+                        filter_entry: false
+                        filter_question:
+                        phone_number_required: false
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                        effective_live: false
+                        welcome_message: Welcome to this awesome portal
+                        denied_message: ''
+                        public_url: https://umad-corp.superdocu.local:5001/p/old
+                      relationships:
+                        workflow:
+                          data:
+                            id: '652'
+                            type: workflow
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '652'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '692'
+                            type: state
+                        reminder_template:
+                          data:
+              schema:
+                "$ref": "#/components/schemas/Portal"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - portal
+                    attributes:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        welcome_message:
+                          type: string
+    delete:
+      summary: Delete a portal
+      tags:
+      - "[v2] Portals"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '204':
+          description: deletes the portal
+  "/api/v2/portals/{id}/publish":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Publish a portal
+      tags:
+      - "[v2] Portals"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: publishes when the portal is publishable
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: publishes when the portal is publishable
+                  value:
+                    data:
+                      id: '43'
+                      type: portal
+                      attributes:
+                        name: My Portal
+                        slug: my-portal
+                        live: true
+                        public: false
+                        filter_entry: false
+                        filter_question:
+                        phone_number_required: false
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                        effective_live: true
+                        welcome_message: Welcome to this awesome portal
+                        denied_message: ''
+                        public_url: https://umad-corp.superdocu.local:5001/p/my-portal
+                      relationships:
+                        workflow:
+                          data:
+                            id: '654'
+                            type: workflow
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '654'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '694'
+                            type: state
+                        reminder_template:
+                          data:
+              schema:
+                "$ref": "#/components/schemas/Portal"
+  "/api/v2/portals/{id}/unpublish":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Unpublish a portal
+      tags:
+      - "[v2] Portals"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: takes the portal offline
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: takes the portal offline
+                  value:
+                    data:
+                      id: '45'
+                      type: portal
+                      attributes:
+                        name: My Portal
+                        slug: my-portal
+                        live: false
+                        public: false
+                        filter_entry: false
+                        filter_question:
+                        phone_number_required: false
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                        effective_live: false
+                        welcome_message: Welcome to this awesome portal
+                        denied_message: ''
+                        public_url: https://umad-corp.superdocu.local:5001/p/my-portal
+                      relationships:
+                        workflow:
+                          data:
+                            id: '656'
+                            type: workflow
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '656'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '696'
+                            type: state
+                        reminder_template:
+                          data:
+              schema:
+                "$ref": "#/components/schemas/Portal"
   "/api/v2/contacts/{id}/reminders":
     parameters:
     - name: id
@@ -3621,7 +4242,7 @@ paths:
                   summary: paginated reminders
                   value:
                     data:
-                    - id: '1'
+                    - id: '35'
                       type: reminder
                       attributes:
                         title: Rappel
@@ -3631,7 +4252,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '340'
+                            id: '430'
                             type: contact
                     meta:
                       has_more: false
@@ -3670,7 +4291,7 @@ paths:
                   summary: reminder created
                   value:
                     data:
-                      id: '2'
+                      id: '36'
                       type: reminder
                       attributes:
                         title: Hello
@@ -3680,7 +4301,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '342'
+                            id: '432'
                             type: contact
                     meta:
                       api_version: '2.0'
@@ -3751,7 +4372,7 @@ paths:
                     items
                   value:
                     data:
-                      id: reminder_options:346
+                      id: reminder_options:436
                       type: reminder_options
                       attributes:
                         reminderable: true
@@ -3837,7 +4458,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '349'
+                            id: '439'
                             type: contact
                     - id: '30'
                       type: shared_document
@@ -3869,7 +4490,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '349'
+                            id: '439'
                             type: contact
                     meta:
                       has_more: false
@@ -3942,7 +4563,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '352'
+                            id: '442'
                             type: contact
                     meta:
                       api_version: '2.0'
@@ -4034,7 +4655,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '353'
+                            id: '443'
                             type: contact
                     meta:
                       api_version: '2.0'
@@ -4175,7 +4796,7 @@ paths:
                       relationships:
                         contact:
                           data:
-                            id: '357'
+                            id: '447'
                             type: contact
                     meta:
                       api_version: '2.0'
@@ -4239,16 +4860,455 @@ paths:
                   summary: url + expires_at
                   value:
                     data:
-                      id: '52'
                       type: shared_document
+                      id: '54'
                       attributes:
                         name: Contrat
-                        url: https://api.superdocu.local/api/v2/shared_documents/52/file?token=REDACTED
+                        url: https://api.superdocu.local/api/v2/shared_documents/54/file?token=REDACTED
                         expires_at: '2026-05-20T08:05:00.000000Z'
                     meta:
                       api_version: '2.0'
               schema:
                 "$ref": "#/components/schemas/SharedDocument"
+  "/api/v2/workflows/{workflow_id}/states/{state_id}/step_inputs":
+    parameters:
+    - name: workflow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: state_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Add a module to a step
+      tags:
+      - "[v2] Step inputs"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '201':
+          description: appends a module (one or more step inputs) to the step
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: appends a module (one or more step inputs) to the step
+                  value:
+                    data:
+                    - id: '1185'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: false
+                        display_only: true
+                        name: Identité
+                        inputable_type: form_input
+                        inputable_id: 259
+                        module_type: form
+                        inputable:
+                          kind: section
+                          name: Identité
+                          title: Identité
+                          required: false
+                        display_conditions:
+                    - id: '1186'
+                      type: step_input
+                      attributes:
+                        position: 3
+                        required: false
+                        display_only: false
+                        name: Nom
+                        inputable_type: form_input
+                        inputable_id: 260
+                        module_type: form
+                        inputable:
+                          kind: text
+                          name: Nom
+                          label: Nom
+                          form_name: Identité
+                          required: false
+                        display_conditions:
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/StepInputCollection"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - step_input
+                    attributes:
+                      type: object
+                      properties:
+                        kind:
+                          type: string
+                          example: form
+                        title:
+                          type: string
+                        content:
+                          type: string
+                        items:
+                          type: array
+                          items:
+                            type: object
+                      required:
+                      - kind
+  "/api/v2/workflows/{workflow_id}/states/{state_id}/step_inputs/attach":
+    parameters:
+    - name: workflow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: state_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Attach an existing reusable module to a step
+      tags:
+      - "[v2] Step inputs"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '201':
+          description: attaches a catalogue document type
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: attaches a catalogue document type
+                  value:
+                    data:
+                      id: '1196'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: true
+                        display_only: false
+                        name: Name
+                        inputable_type: company_document_type
+                        inputable_id: 185
+                        module_type: provider_kind
+                        inputable:
+                          kind: document
+                          name: Name
+                          required: true
+                          expirable: false
+                        display_conditions:
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/StepInput"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - step_input
+                    attributes:
+                      type: object
+                      properties:
+                        inputable_type:
+                          type: string
+                          enum:
+                          - CompanyDocumentType
+                          - Screen
+                        inputable_id:
+                          type: integer
+                        required:
+                          type: boolean
+                      required:
+                      - inputable_type
+                      - inputable_id
+  "/api/v2/step_inputs/{id}":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: Update a module
+      tags:
+      - "[v2] Step inputs"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: updates the module flags
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: updates the module flags
+                  value:
+                    data:
+                      id: '1203'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: false
+                        display_only: false
+                        name: Input
+                        inputable_type: form_input
+                        inputable_id: 263
+                        module_type: form
+                        inputable:
+                          kind: text
+                          name: Input
+                          label: My field
+                          required: false
+                        display_conditions:
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/StepInput"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - step_input
+                    attributes:
+                      type: object
+                      properties:
+                        required:
+                          type: boolean
+                        display_only:
+                          type: boolean
+  "/api/v2/step_inputs/{id}/conditions":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    put:
+      summary: Replace a module display conditions
+      tags:
+      - "[v2] Step inputs"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: sets a condition referencing a source field
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: sets a condition referencing a source field
+                  value:
+                    data:
+                      id: '1209'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: false
+                        display_only: false
+                        name: SIRET
+                        inputable_type: form_input
+                        inputable_id: 265
+                        module_type: form
+                        inputable:
+                          kind: text
+                          name: SIRET
+                          label: My field
+                          required: false
+                        display_conditions:
+                          groups:
+                          - rules:
+                            - source_field_key: step_input_1210
+                              operator: equals
+                              value: pro
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/StepInput"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+  "/api/v2/step_inputs/{id}/position":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: Reposition a module
+      tags:
+      - "[v2] Step inputs"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: moves the module and shifts its siblings
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: moves the module and shifts its siblings
+                  value:
+                    data:
+                      id: '1215'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: false
+                        display_only: false
+                        name: Input
+                        inputable_type: form_input
+                        inputable_id: 269
+                        module_type: form
+                        inputable:
+                          kind: text
+                          name: Input
+                          label: My field
+                          required: false
+                        display_conditions:
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/StepInput"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - step_input
+                    attributes:
+                      type: object
+                      properties:
+                        position:
+                          type: integer
+                      required:
+                      - position
   "/api/v2/step_requests/{id}":
     parameters:
     - name: id
@@ -4272,7 +5332,7 @@ paths:
                   summary: step_request payload
                   value:
                     data:
-                      id: '118'
+                      id: '247'
                       type: step_request
                       attributes:
                         value: FR76 1234
@@ -4280,7 +5340,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         status: waiting_for_validation
-                        step_input_id: 615
+                        step_input_id: 1227
                         input_type: form_input
                         input_name: IBAN
                         input_kind: text
@@ -4289,16 +5349,16 @@ paths:
                         available_actions:
                         - name: approve
                           method: POST
-                          href: "/api/v2/step_requests/118/approve"
+                          href: "/api/v2/step_requests/247/approve"
                           required_attributes: []
                         - name: reject
                           method: POST
-                          href: "/api/v2/step_requests/118/reject"
+                          href: "/api/v2/step_requests/247/reject"
                           required_attributes:
                           - rejection_message
                         - name: update
                           method: PATCH
-                          href: "/api/v2/step_requests/118"
+                          href: "/api/v2/step_requests/247"
                           required_attributes:
                           - value
                         unavailable_actions: []
@@ -4351,7 +5411,7 @@ paths:
                   summary: step_request value corrected and approved
                   value:
                     data:
-                      id: '130'
+                      id: '258'
                       type: step_request
                       attributes:
                         value: FR76 0000 1111 2222
@@ -4359,7 +5419,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         status: approved
-                        step_input_id: 646
+                        step_input_id: 1254
                         input_type: form_input
                         input_name: IBAN
                         input_kind: text
@@ -4368,12 +5428,12 @@ paths:
                         available_actions:
                         - name: reject
                           method: POST
-                          href: "/api/v2/step_requests/130/reject"
+                          href: "/api/v2/step_requests/258/reject"
                           required_attributes:
                           - rejection_message
                         - name: update
                           method: PATCH
-                          href: "/api/v2/step_requests/130"
+                          href: "/api/v2/step_requests/258"
                           required_attributes:
                           - value
                         unavailable_actions:
@@ -4458,7 +5518,7 @@ paths:
                   summary: step_request approved
                   value:
                     data:
-                      id: '126'
+                      id: '254'
                       type: step_request
                       attributes:
                         value: FR76 1234
@@ -4466,7 +5526,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         status: approved
-                        step_input_id: 636
+                        step_input_id: 1244
                         input_type: form_input
                         input_name: IBAN
                         input_kind: text
@@ -4475,12 +5535,12 @@ paths:
                         available_actions:
                         - name: reject
                           method: POST
-                          href: "/api/v2/step_requests/126/reject"
+                          href: "/api/v2/step_requests/254/reject"
                           required_attributes:
                           - rejection_message
                         - name: update
                           method: PATCH
-                          href: "/api/v2/step_requests/126"
+                          href: "/api/v2/step_requests/254"
                           required_attributes:
                           - value
                         unavailable_actions:
@@ -4537,7 +5597,7 @@ paths:
                   summary: step_request rejected
                   value:
                     data:
-                      id: '142'
+                      id: '270'
                       type: step_request
                       attributes:
                         value: FR76 1234
@@ -4545,7 +5605,7 @@ paths:
                         created_at: '2026-05-20T08:00:00.000000Z'
                         updated_at: '2026-05-20T08:00:00.000000Z'
                         status: rejected
-                        step_input_id: 672
+                        step_input_id: 1280
                         input_type: form_input
                         input_name: IBAN
                         input_kind: text
@@ -4554,11 +5614,11 @@ paths:
                         available_actions:
                         - name: approve
                           method: POST
-                          href: "/api/v2/step_requests/142/approve"
+                          href: "/api/v2/step_requests/270/approve"
                           required_attributes: []
                         - name: update
                           method: PATCH
-                          href: "/api/v2/step_requests/142"
+                          href: "/api/v2/step_requests/270"
                           required_attributes:
                           - value
                         unavailable_actions:
@@ -4660,24 +5720,24 @@ paths:
                     to the consumer's company)
                   value:
                     data:
-                    - id: provider_activity_1
+                    - id: provider_activity_39
                       type: timeline_event
                       attributes:
                         event_type: document_uploaded
                         created_at: '2026-05-20T09:00:00.000000+02:00'
                         metadata:
-                          contact_id: '381'
+                          contact_id: '473'
                           entity_type: contact
-                          entity_id: '381'
-                    - id: consumer_activity_75
+                          entity_id: '473'
+                    - id: consumer_activity_150
                       type: timeline_event
                       attributes:
                         event_type: document_approved
                         created_at: '2026-05-20T08:00:00.000000+02:00'
                         metadata:
-                          contact_id: '381'
+                          contact_id: '473'
                           entity_type: contact
-                          entity_id: '381'
+                          entity_id: '473'
                     meta:
                       has_more: false
                       next_cursor:
@@ -4738,24 +5798,24 @@ paths:
                   summary: paginated timeline events for the targeted contact
                   value:
                     data:
-                    - id: provider_activity_9
+                    - id: provider_activity_43
                       type: timeline_event
                       attributes:
                         event_type: document_uploaded
                         created_at: '2026-05-20T09:00:00.000000+02:00'
                         metadata:
-                          contact_id: '389'
+                          contact_id: '477'
                           entity_type: contact
-                          entity_id: '389'
-                    - id: consumer_activity_79
+                          entity_id: '477'
+                    - id: consumer_activity_154
                       type: timeline_event
                       attributes:
                         event_type: document_approved
                         created_at: '2026-05-20T08:00:00.000000+02:00'
                         metadata:
-                          contact_id: '389'
+                          contact_id: '477'
                           entity_type: contact
-                          entity_id: '389'
+                          entity_id: '477'
                     meta:
                       has_more: false
                       next_cursor:
@@ -4768,6 +5828,406 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/JsonApiError404"
+  "/api/v2/workflows/{workflow_id}/reminder_template":
+    parameters:
+    - name: workflow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      summary: Read the workflow reminder template
+      tags:
+      - "[v2] Workflow reminders"
+      security:
+      - jwt_bearer_token: []
+      responses:
+        '200':
+          description: returns the reminder template
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: returns the reminder template
+                  value:
+                    data:
+                      id: '60'
+                      type: reminder_template
+                      attributes:
+                        title: Old
+                        body: Hello there, we need a document now!
+                        enable: true
+                        daily_frequency: 7
+                        start_offset: 7
+                        limit: 4
+                        include_missing_documents_list: false
+                        entity_type: Workflow
+                        entity_id: 725
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/ReminderTemplate"
+    patch:
+      summary: Configure the workflow reminder template
+      tags:
+      - "[v2] Workflow reminders"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: updates the provided fields
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: updates the provided fields
+                  value:
+                    data:
+                      id: '62'
+                      type: reminder_template
+                      attributes:
+                        title: Documents attendus
+                        body: Hello there, we need a document now!
+                        enable: false
+                        daily_frequency: 7
+                        start_offset: 7
+                        limit: 4
+                        include_missing_documents_list: false
+                        entity_type: Workflow
+                        entity_id: 728
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                    meta:
+                      api_version: '2.0'
+              schema:
+                "$ref": "#/components/schemas/ReminderTemplate"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - reminder_template
+                    attributes:
+                      type: object
+                      properties:
+                        enable:
+                          type: boolean
+                        title:
+                          type: string
+                        body:
+                          type: string
+                        start_offset:
+                          type: integer
+  "/api/v2/workflows/{workflow_id}/states":
+    parameters:
+    - name: workflow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Add a step to a workflow
+      tags:
+      - "[v2] Workflow states"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '201':
+          description: appends a step
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: appends a step
+                  value:
+                    data:
+                      id: '772'
+                      type: state
+                      attributes:
+                        name: Identité
+                        position: 1
+                        condition_on_the_request_to_move_forward: no_condition
+                        kind:
+                      relationships:
+                        step_inputs:
+                          data: []
+                    meta:
+                      api_version: '2.0'
+                    included: []
+              schema:
+                "$ref": "#/components/schemas/WorkflowState"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - workflow_state
+                    attributes:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: Identité
+                        condition_on_the_request_to_move_forward:
+                          type: string
+                          enum:
+                          - no_condition
+                          - done
+                      required:
+                      - name
+  "/api/v2/workflows/{workflow_id}/states/{id}":
+    parameters:
+    - name: workflow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: Update a step
+      tags:
+      - "[v2] Workflow states"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: updates the step
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: updates the step
+                  value:
+                    data:
+                      id: '773'
+                      type: state
+                      attributes:
+                        name: Documents
+                        position: 1
+                        condition_on_the_request_to_move_forward: done
+                        kind: screen
+                      relationships:
+                        step_inputs:
+                          data:
+                          - id: '1290'
+                            type: step_input
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '1290'
+                      type: step_input
+                      attributes:
+                        position: 1
+                        required: false
+                        display_only: true
+                        name: 'Screen #414'
+                        inputable_type: screen
+                        inputable_id: 821
+                        module_type: screen
+                        inputable:
+                          kind: screen
+                          title: 'Screen #414'
+                          content: ''
+                        display_conditions:
+              schema:
+                "$ref": "#/components/schemas/WorkflowState"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - workflow_state
+                    attributes:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        condition_on_the_request_to_move_forward:
+                          type: string
+  "/api/v2/workflows/{workflow_id}/states/{id}/position":
+    parameters:
+    - name: workflow_id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      summary: Reposition a step
+      tags:
+      - "[v2] Workflow states"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: moves the step and shifts its siblings
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: moves the step and shifts its siblings
+                  value:
+                    data:
+                      id: '778'
+                      type: state
+                      attributes:
+                        name: Second
+                        position: 1
+                        condition_on_the_request_to_move_forward: no_condition
+                        kind: screen
+                      relationships:
+                        step_inputs:
+                          data:
+                          - id: '1295'
+                            type: step_input
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '1295'
+                      type: step_input
+                      attributes:
+                        position: 1
+                        required: false
+                        display_only: true
+                        name: 'Screen #419'
+                        inputable_type: screen
+                        inputable_id: 826
+                        module_type: screen
+                        inputable:
+                          kind: screen
+                          title: 'Screen #419'
+                          content: ''
+                        display_conditions:
+              schema:
+                "$ref": "#/components/schemas/WorkflowState"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - workflow_state
+                    attributes:
+                      type: object
+                      properties:
+                        position:
+                          type: integer
+                          example: 1
+                      required:
+                      - position
   "/api/v2/workflows":
     get:
       summary: List workflow templates with states, step_inputs and properties
@@ -4795,6 +6255,19 @@ paths:
           maximum: 100
           example: 50
         description: Items per page (clamped to [1, 100]).
+      - name: include_disabled
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - '0'
+          - '1'
+          example: '1'
+        description: Set to 1 to also return disabled (draft) workflows — useful when
+          authoring sequences. Honoured only with the manage_workflows permission.
+          Defaults to enabled-only, matching what POST /contacts/:id/workflows can
+          assign.
       responses:
         '200':
           description: paginated workflow templates
@@ -4805,15 +6278,24 @@ paths:
                   summary: paginated workflow templates
                   value:
                     data:
-                    - id: '397'
+                    - id: '740'
                       type: workflow
                       attributes:
                         name: Onboarding
+                        description:
+                        slug: onboarding
                         repeatable: false
                         enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
                       relationships:
                         states:
                           data: []
+                        reminder_template:
+                          data:
                     included: []
                     meta:
                       has_more: false
@@ -4834,6 +6316,179 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/JsonApiError403"
+    post:
+      summary: Create a workflow template
+      tags:
+      - "[v2] Workflows"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '201':
+          description: creates an empty sequence with an entry state
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: creates an empty sequence with an entry state
+                  value:
+                    data:
+                      id: '759'
+                      type: workflow
+                      attributes:
+                        name: Onboarding transporteur
+                        description:
+                        slug: onboarding-transporteur
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '787'
+                            type: state
+                        reminder_template:
+                          data:
+                            id: '64'
+                            type: reminder_template
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '1311'
+                      type: step_input
+                      attributes:
+                        position: 1
+                        required: false
+                        display_only: true
+                        name: Welcome
+                        inputable_type: screen
+                        inputable_id: 840
+                        module_type: screen
+                        inputable:
+                          kind: screen
+                          title: Welcome
+                          content: |
+                            <div class="trix-content">
+                              Please click on the button below in order to start
+                            </div>
+                        display_conditions:
+                    - id: '787'
+                      type: state
+                      attributes:
+                        name: Start screen
+                        position: 1
+                        condition_on_the_request_to_move_forward: no_condition
+                        kind: screen
+                      relationships:
+                        step_inputs:
+                          data:
+                          - id: '1311'
+                            type: step_input
+                    - id: '64'
+                      type: reminder_template
+                      attributes:
+                        title: Your file is incomplete
+                        body: We would like to remind you that we are still waiting
+                          for some information.
+                        enable: true
+                        daily_frequency: 7
+                        start_offset: 7
+                        limit: 5
+                        include_missing_documents_list: false
+                        entity_type: Workflow
+                        entity_id: 759
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+              schema:
+                "$ref": "#/components/schemas/Workflow"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - workflow
+                    attributes:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: Onboarding transporteur
+                        description:
+                          type: string
+                          example: Collecte initiale
+                          description: Optional.
+                        repeatable:
+                          type: boolean
+                          example: false
+                          description: Optional.
+                        enable:
+                          type: boolean
+                          example: false
+                          description: Optional.
+                        start_cta:
+                          type: string
+                          example: Démarrer
+                          description: Optional.
+                        start_again_cta:
+                          type: string
+                          example: Recommencer
+                          description: Optional.
+                        steps:
+                          type: array
+                          items:
+                            type: object
+                          description: Optional blueprint steps. Each step accepts
+                            a name and modules[] DSL entries.
+                        reminder_template:
+                          type: object
+                          description: Optional reminder blueprint for the created
+                            workflow.
+                          properties:
+                            enable:
+                              type: boolean
+                            title:
+                              type: string
+                            body:
+                              type: string
+                            start_offset:
+                              type: integer
+                            daily_frequency:
+                              type: integer
+                            limit:
+                              type: integer
+                            include_missing_documents_list:
+                              type: boolean
+                      required:
+                      - name
   "/api/v2/workflows/{id}":
     parameters:
     - name: id
@@ -4851,9 +6506,12 @@ paths:
         - '1'
         example: '1'
       description: Set to 1 to embed completion aggregates (assigned/completed/pending_contacts_count
-        + completion_rate). Default skips them — computing the four numbers can take
-        seconds on templates with many assigned contacts. Pay it only when you need
-        the numbers (typically once per dashboard refresh, not per polling loop).
+        + completion_rate). Honoured only with the see_all_contacts or manage_contacts
+        permission — these are contact-usage figures, so an authoring-only (manage_workflows)
+        caller gets the workflow tree without them. Default skips them — computing
+        the four numbers can take seconds on templates with many assigned contacts.
+        Pay it only when you need the numbers (typically once per dashboard refresh,
+        not per polling loop).
     get:
       summary: Get workflow template (completion aggregates opt-in)
       tags:
@@ -4870,21 +6528,121 @@ paths:
                   summary: default response stays cheap (no completion aggregates)
                   value:
                     data:
-                      id: '415'
+                      id: '774'
                       type: workflow
                       attributes:
                         name: Onboarding
+                        description:
+                        slug: onboarding
                         repeatable: false
                         enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
                       relationships:
                         states:
                           data:
-                          - id: '470'
+                          - id: '794'
                             type: state
-                          - id: '471'
+                          - id: '795'
                             type: state
+                        reminder_template:
+                          data:
                     meta:
                       api_version: '2.0'
+                    included:
+                    - id: '1320'
+                      type: step_input
+                      attributes:
+                        position: 1
+                        required: false
+                        display_only: true
+                        name: 'Screen #433'
+                        inputable_type: screen
+                        inputable_id: 846
+                        module_type: screen
+                        inputable:
+                          kind: screen
+                          title: 'Screen #433'
+                          content: ''
+                        display_conditions:
+                    - id: '1322'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: true
+                        display_only: false
+                        name: Input
+                        inputable_type: form_input
+                        inputable_id: 306
+                        module_type: form
+                        inputable:
+                          kind: text
+                          name: Input
+                          label: My field
+                          required: false
+                        display_conditions:
+                    - id: '794'
+                      type: state
+                      attributes:
+                        name: Step 1
+                        position: 1
+                        condition_on_the_request_to_move_forward: no_condition
+                        kind: form
+                      relationships:
+                        step_inputs:
+                          data:
+                          - id: '1320'
+                            type: step_input
+                          - id: '1322'
+                            type: step_input
+                    - id: '1321'
+                      type: step_input
+                      attributes:
+                        position: 1
+                        required: false
+                        display_only: true
+                        name: 'Screen #435'
+                        inputable_type: screen
+                        inputable_id: 848
+                        module_type: screen
+                        inputable:
+                          kind: screen
+                          title: 'Screen #435'
+                          content: ''
+                        display_conditions:
+                    - id: '1323'
+                      type: step_input
+                      attributes:
+                        position: 2
+                        required: true
+                        display_only: false
+                        name: Input
+                        inputable_type: form_input
+                        inputable_id: 307
+                        module_type: form
+                        inputable:
+                          kind: text
+                          name: Input
+                          label: My field
+                          required: false
+                        display_conditions:
+                    - id: '795'
+                      type: state
+                      attributes:
+                        name: Step 1
+                        position: 2
+                        condition_on_the_request_to_move_forward: no_condition
+                        kind: form
+                      relationships:
+                        step_inputs:
+                          data:
+                          - id: '1321'
+                            type: step_input
+                          - id: '1323'
+                            type: step_input
               schema:
                 "$ref": "#/components/schemas/Workflow"
         '404':
@@ -4893,6 +6651,312 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/JsonApiError404"
+    patch:
+      summary: Update a workflow template
+      tags:
+      - "[v2] Workflows"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: updates only the provided fields
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: updates only the provided fields
+                  value:
+                    data:
+                      id: '787'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description: Mise à jour
+                        slug: onboarding
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data: []
+                        reminder_template:
+                          data:
+                    meta:
+                      api_version: '2.0'
+                    included: []
+              schema:
+                "$ref": "#/components/schemas/Workflow"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data
+              properties:
+                data:
+                  type: object
+                  required:
+                  - type
+                  - attributes
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - workflow
+                    attributes:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        start_cta:
+                          type: string
+  "/api/v2/workflows/{id}/enable":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Enable a workflow
+      tags:
+      - "[v2] Workflows"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: enables the workflow
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: enables the workflow
+                  value:
+                    data:
+                      id: '791'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding-2
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data: []
+                        reminder_template:
+                          data:
+                    meta:
+                      api_version: '2.0'
+                    included: []
+              schema:
+                "$ref": "#/components/schemas/Workflow"
+  "/api/v2/workflows/{id}/disable":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Disable a workflow (cascades to reminders and portals)
+      tags:
+      - "[v2] Workflows"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '200':
+          description: disables the workflow
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: disables the workflow
+                  value:
+                    data:
+                      id: '793'
+                      type: workflow
+                      attributes:
+                        name: Onboarding
+                        description:
+                        slug: onboarding-2
+                        repeatable: false
+                        enable: false
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data: []
+                        reminder_template:
+                          data:
+                    meta:
+                      api_version: '2.0'
+                    included: []
+              schema:
+                "$ref": "#/components/schemas/Workflow"
+  "/api/v2/workflows/{id}/duplicate":
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      summary: Duplicate a workflow
+      tags:
+      - "[v2] Workflows"
+      security:
+      - jwt_bearer_token: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        description: 'Optional UUID v4 for mutating requests. When provided, same
+          key + same payload replays the cached response (within 48h) with `Idempotent-Replay:
+          true` header; same key + different payload returns 422 `idempotency_key_payload_mismatch`.
+          When omitted, the server generates a UUID, executes the action, and exposes
+          the key in the `Idempotent-Generated-Key` response header so the client
+          can replay later by sending it back. Non-UUID → 400 `invalid_idempotency_key`.'
+      responses:
+        '201':
+          description: creates a copy of the sequence
+          content:
+            application/json:
+              examples:
+                default:
+                  summary: creates a copy of the sequence
+                  value:
+                    data:
+                      id: '796'
+                      type: workflow
+                      attributes:
+                        name: Source (copy)
+                        description:
+                        slug: source-2026-05-20
+                        repeatable: false
+                        enable: true
+                        start_cta:
+                        start_again_cta:
+                        naming_form_input_id:
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+                      relationships:
+                        states:
+                          data:
+                          - id: '807'
+                            type: state
+                        reminder_template:
+                          data:
+                            id: '72'
+                            type: reminder_template
+                    meta:
+                      api_version: '2.0'
+                    included:
+                    - id: '1345'
+                      type: step_input
+                      attributes:
+                        position: 1
+                        required: false
+                        display_only: true
+                        name: 'Screen #459'
+                        inputable_type: screen
+                        inputable_id: 873
+                        module_type: screen
+                        inputable:
+                          kind: screen
+                          title: 'Screen #459'
+                          content: "<div class=\"trix-content\">\n  \n</div>\n"
+                        display_conditions:
+                    - id: '807'
+                      type: state
+                      attributes:
+                        name: Step 1
+                        position: 1
+                        condition_on_the_request_to_move_forward: no_condition
+                        kind: screen
+                      relationships:
+                        step_inputs:
+                          data:
+                          - id: '1345'
+                            type: step_input
+                    - id: '72'
+                      type: reminder_template
+                      attributes:
+                        title: Your file is incomplete
+                        body: We would like to remind you that we are still waiting
+                          for some information.
+                        enable: true
+                        daily_frequency: 7
+                        start_offset: 7
+                        limit: 5
+                        include_missing_documents_list: false
+                        entity_type: Workflow
+                        entity_id: 796
+                        created_at: '2026-05-20T10:00:00.000+02:00'
+                        updated_at: '2026-05-20T10:00:00.000+02:00'
+              schema:
+                "$ref": "#/components/schemas/Workflow"
 servers:
 - url: "{host}"
   variables:
@@ -5161,6 +7225,13 @@ components:
             items:
               type: string
             example: []
+          required_any_attributes:
+            type: array
+            items:
+              type: string
+            example:
+            - expiration_date
+            - emission_date
         required:
         - name
         - method
@@ -5202,47 +7273,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5285,47 +7318,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5368,47 +7363,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5482,47 +7439,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5583,47 +7502,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5697,47 +7578,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5798,47 +7641,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5881,47 +7686,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -5964,47 +7731,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -6047,47 +7776,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -6161,47 +7852,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -6275,47 +7928,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -6389,47 +8004,9 @@ components:
           additionalProperties: true
           nullable: true
         available_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: approve
-              method:
-                type: string
-                enum:
-                - GET
-                - POST
-                - PATCH
-                - DELETE
-              href:
-                type: string
-                example: "/api/v2/documents_groups/123/approve"
-              required_attributes:
-                type: array
-                items:
-                  type: string
-                example: []
-            required:
-            - name
-            - method
-            - href
-            - required_attributes
+          "$ref": "#/components/schemas/AvailableActions"
         unavailable_actions:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: mark_not_applicable
-              reason:
-                type: string
-                example: required_document
-            required:
-            - name
-            - reason
+          "$ref": "#/components/schemas/UnavailableActions"
       required:
       - id
       - type
@@ -6447,6 +8024,311 @@ components:
               example: '2.0'
           required:
           - api_version
+      required:
+      - data
+      - meta
+    WorkflowStateResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - state
+        attributes:
+          type: object
+          additionalProperties: true
+        relationships:
+          type: object
+          additionalProperties: true
+          nullable: true
+        links:
+          type: object
+          additionalProperties: true
+          nullable: true
+        available_actions:
+          "$ref": "#/components/schemas/AvailableActions"
+        unavailable_actions:
+          "$ref": "#/components/schemas/UnavailableActions"
+      required:
+      - id
+      - type
+      - attributes
+    WorkflowState:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/WorkflowStateResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+          required:
+          - api_version
+      required:
+      - data
+      - meta
+    StepInputResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - step_input
+        attributes:
+          type: object
+          additionalProperties: true
+        relationships:
+          type: object
+          additionalProperties: true
+          nullable: true
+        links:
+          type: object
+          additionalProperties: true
+          nullable: true
+        available_actions:
+          "$ref": "#/components/schemas/AvailableActions"
+        unavailable_actions:
+          "$ref": "#/components/schemas/UnavailableActions"
+      required:
+      - id
+      - type
+      - attributes
+    StepInput:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/StepInputResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+          required:
+          - api_version
+      required:
+      - data
+      - meta
+    StepInputCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            "$ref": "#/components/schemas/StepInputResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+          required:
+          - api_version
+      required:
+      - data
+      - meta
+    ReminderTemplateResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - reminder_template
+        attributes:
+          type: object
+          additionalProperties: true
+        relationships:
+          type: object
+          additionalProperties: true
+          nullable: true
+        links:
+          type: object
+          additionalProperties: true
+          nullable: true
+        available_actions:
+          "$ref": "#/components/schemas/AvailableActions"
+        unavailable_actions:
+          "$ref": "#/components/schemas/UnavailableActions"
+      required:
+      - id
+      - type
+      - attributes
+    ReminderTemplate:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/ReminderTemplateResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+          required:
+          - api_version
+      required:
+      - data
+      - meta
+    PortalResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - portal
+        attributes:
+          type: object
+          additionalProperties: true
+        relationships:
+          type: object
+          additionalProperties: true
+          nullable: true
+        links:
+          type: object
+          additionalProperties: true
+          nullable: true
+        available_actions:
+          "$ref": "#/components/schemas/AvailableActions"
+        unavailable_actions:
+          "$ref": "#/components/schemas/UnavailableActions"
+      required:
+      - id
+      - type
+      - attributes
+    Portal:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/PortalResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+          required:
+          - api_version
+      required:
+      - data
+      - meta
+    PortalCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            "$ref": "#/components/schemas/PortalResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+            has_more:
+              type: boolean
+              example: false
+            next_cursor:
+              type: string
+              nullable: true
+              example: eyJpZCI6MTJ9
+            prev_cursor:
+              type: string
+              nullable: true
+              example:
+          required:
+          - api_version
+          - has_more
+          - next_cursor
+      required:
+      - data
+      - meta
+    CompanyDocumentTypeResource:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '1'
+        type:
+          type: string
+          enum:
+          - company_document_type
+        attributes:
+          type: object
+          additionalProperties: true
+        relationships:
+          type: object
+          additionalProperties: true
+          nullable: true
+        links:
+          type: object
+          additionalProperties: true
+          nullable: true
+        available_actions:
+          "$ref": "#/components/schemas/AvailableActions"
+        unavailable_actions:
+          "$ref": "#/components/schemas/UnavailableActions"
+      required:
+      - id
+      - type
+      - attributes
+    CompanyDocumentType:
+      type: object
+      properties:
+        data:
+          "$ref": "#/components/schemas/CompanyDocumentTypeResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+          required:
+          - api_version
+      required:
+      - data
+      - meta
+    CompanyDocumentTypeCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            "$ref": "#/components/schemas/CompanyDocumentTypeResource"
+        meta:
+          type: object
+          properties:
+            api_version:
+              type: string
+              example: '2.0'
+            has_more:
+              type: boolean
+              example: false
+            next_cursor:
+              type: string
+              nullable: true
+              example: eyJpZCI6MTJ9
+            prev_cursor:
+              type: string
+              nullable: true
+              example:
+          required:
+          - api_version
+          - has_more
+          - next_cursor
       required:
       - data
       - meta
@@ -6475,47 +8357,9 @@ components:
               additionalProperties: true
               nullable: true
             available_actions:
-              type: array
-              items:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    example: approve
-                  method:
-                    type: string
-                    enum:
-                    - GET
-                    - POST
-                    - PATCH
-                    - DELETE
-                  href:
-                    type: string
-                    example: "/api/v2/documents_groups/123/approve"
-                  required_attributes:
-                    type: array
-                    items:
-                      type: string
-                    example: []
-                required:
-                - name
-                - method
-                - href
-                - required_attributes
+              "$ref": "#/components/schemas/AvailableActions"
             unavailable_actions:
-              type: array
-              items:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    example: mark_not_applicable
-                  reason:
-                    type: string
-                    example: required_document
-                required:
-                - name
-                - reason
+              "$ref": "#/components/schemas/UnavailableActions"
           required:
           - id
           - type
