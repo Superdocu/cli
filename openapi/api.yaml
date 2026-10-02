@@ -466,12 +466,6 @@ paths:
                 "$ref": "#/components/schemas/ContactWorkflowCreated"
         '422':
           description: assigning a disabled workflow returns code disabled_workflow
-        '409':
-          description: non-repeatable workflow already assigned
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/JsonApiError409"
       requestBody:
         content:
           application/json:
