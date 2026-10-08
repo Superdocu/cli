@@ -5495,7 +5495,9 @@ paths:
                           type: string
                           example: FR76 0000 1111 2222
                           description: New value for the form_input. Server stores
-                            it and transitions to approved atomically.
+                            it and transitions to approved atomically. A radio_matrix
+                            expects an object of rows; any other shape is rejected
+                            with `invalid_value`.
                       required:
                       - value
   "/api/v2/step_requests/{id}/approve":
@@ -5761,6 +5763,9 @@ paths:
                       api_version: '2.0'
               schema:
                 "$ref": "#/components/schemas/TimelineEventCollection"
+        '400':
+          description: forged cursor whose source_id overflows a bigint returns invalid_cursor
+            (no 500)
         '403':
           description: missing see_all_contacts permission
           content:
